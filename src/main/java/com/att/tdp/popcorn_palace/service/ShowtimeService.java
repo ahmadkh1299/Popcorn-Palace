@@ -98,6 +98,10 @@ public class ShowtimeService {
     }
 
     private GetShowtimeDTO convertToDTO(Showtime showtime) {
+        if (showtime.getMovie() == null) {
+            throw new BadRequestException("Showtime is missing associated movie.");
+        }
+
         return new GetShowtimeDTO(
                 showtime.getId(),
                 showtime.getMovie().getId(),
@@ -107,4 +111,5 @@ public class ShowtimeService {
                 showtime.getEndTime()
         );
     }
+
 }
