@@ -1,0 +1,11 @@
+POST http://localhost:8080/movies
+Content-Type: application/json
+
+{
+  "title": "Interstellar",
+  "genre": ["Sci-Fi", "Adventure"],
+  "duration": 169,
+  "rating": 8.6,
+  "releaseYear": 2014
+}
+
