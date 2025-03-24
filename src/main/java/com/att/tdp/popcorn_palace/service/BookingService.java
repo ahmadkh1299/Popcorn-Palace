@@ -26,21 +26,28 @@ public class BookingService {
     }
 
     public BookingResponseDTO bookTicket(AddBookingDTO dto) {
-        Showtime showtime = showtimeRepository.findById(dto.getShowtimeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Showtime not found with id: " + dto.getShowtimeId()));
+        try {
+            Showtime showtime = showtimeRepository.findById(dto.getShowtimeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Showtime not found with id: " + dto.getShowtimeId()));
 
-        boolean seatAlreadyBooked = bookingRepository.existsByShowtimeIdAndSeatNumber(dto.getShowtimeId(), dto.getSeatNumber());
-        if (seatAlreadyBooked) {
-            throw new BadRequestException("Seat " + dto.getSeatNumber() + " is already booked for this showtime.");
+            boolean seatAlreadyBooked = bookingRepository.existsByShowtimeIdAndSeatNumber(dto.getShowtimeId(), dto.getSeatNumber());
+            if (seatAlreadyBooked) {
+                throw new BadRequestException("Seat " + dto.getSeatNumber() + " is already booked for this showtime.");
+            }
+
+            Booking booking = new Booking();
+            booking.setBookingId(UUID.randomUUID());
+            booking.setUserId(dto.getUserId());
+            booking.setSeatNumber(dto.getSeatNumber());
+            booking.setShowtime(showtime);
+
+            Booking savedBooking = bookingRepository.save(booking);
+            return new BookingResponseDTO(savedBooking.getBookingId());
+
+        } catch (ResourceNotFoundException | BadRequestException e) {
+            throw e; // Let custom exceptions bubble up
+        } catch (Exception e) {
+            throw new BadRequestException("Failed to book ticket due to a server error.");
         }
-
-        Booking booking = new Booking();
-        booking.setBookingId(UUID.randomUUID());
-        booking.setUserId(dto.getUserId());
-        booking.setSeatNumber(dto.getSeatNumber());
-        booking.setShowtime(showtime);
-
-        Booking savedBooking = bookingRepository.save(booking);
-        return new BookingResponseDTO(savedBooking.getBookingId());
     }
 }

@@ -1,11 +1,11 @@
 package com.att.tdp.popcorn_palace.controller;
 
 import com.att.tdp.popcorn_palace.dto.ShowtimeDTO.AddShowtimeDTO;
-import com.att.tdp.popcorn_palace.dto.ShowtimeDTO.UpdateShowtimeDTO;
 import com.att.tdp.popcorn_palace.dto.ShowtimeDTO.GetShowtimeDTO;
+import com.att.tdp.popcorn_palace.dto.ShowtimeDTO.UpdateShowtimeDTO;
 import com.att.tdp.popcorn_palace.service.ShowtimeService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,14 +14,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/showtimes")
+@AllArgsConstructor
 public class ShowtimeController {
 
     private final ShowtimeService showtimeService;
-
-    @Autowired
-    public ShowtimeController(ShowtimeService showtimeService) {
-        this.showtimeService = showtimeService;
-    }
 
     @GetMapping("/{id}")
     public ResponseEntity<GetShowtimeDTO> getShowtime(@PathVariable Long id) {
