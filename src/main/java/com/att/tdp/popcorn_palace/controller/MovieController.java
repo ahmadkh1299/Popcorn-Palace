@@ -10,7 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/movies")
@@ -30,10 +32,13 @@ public class MovieController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> addMovie(@Valid @RequestBody AddMovieDTO movie) {
-        movieService.addMovie(movie);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<Map<String, Object>> addMovie(@Valid @RequestBody AddMovieDTO dto) {
+        Long id = movieService.addMovie(dto);
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", id);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
 
     @PutMapping("/{title}")
     public ResponseEntity<Void> updateMovie(@PathVariable String title, @Valid @RequestBody UpdateMovieDTO movie) {

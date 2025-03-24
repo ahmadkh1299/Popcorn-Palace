@@ -49,7 +49,7 @@ public class MovieService {
         }
     }
 
-    public void addMovie(AddMovieDTO dto) {
+    public Long addMovie(AddMovieDTO dto) {
         logger.info("Adding movie: {}", dto.getTitle());
         try {
             Movie movie = new Movie();
@@ -59,7 +59,8 @@ public class MovieService {
             movie.setRating(dto.getRating());
             movie.setReleaseYear(dto.getReleaseYear());
             movieRepository.save(movie);
-            logger.info("Movie saved successfully: {}", movie.getTitle());
+            logger.info("Movie saved successfully: {} with ID {}", movie.getTitle(), movie.getId());
+            return movie.getId();  // ✅ Return the generated ID
         } catch (Exception e) {
             logger.error("Error adding movie: {}", dto.getTitle(), e);
             throw new RuntimeException("Failed to add movie", e);

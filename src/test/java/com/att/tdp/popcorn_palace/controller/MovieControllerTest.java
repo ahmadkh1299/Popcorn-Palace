@@ -14,8 +14,9 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,15 +58,24 @@ public class MovieControllerTest {
 
     @Test
     public void testAddMovie() {
+        // Arrange
         AddMovieDTO addDto = new AddMovieDTO();
+        Long generatedId = 123L;
 
-        doNothing().when(movieService).addMovie(addDto);
+        when(movieService.addMovie(addDto)).thenReturn(generatedId);
 
-        ResponseEntity<Void> response = movieController.addMovie(addDto);
+        // Act
+        ResponseEntity<Map<String, Object>> response = movieController.addMovie(addDto);
 
+        // Assert
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().containsKey("id"));
+        assertEquals(generatedId, ((Number) response.getBody().get("id")).longValue());
+
         verify(movieService, times(1)).addMovie(addDto);
     }
+
 
     @Test
     public void testUpdateMovie() {

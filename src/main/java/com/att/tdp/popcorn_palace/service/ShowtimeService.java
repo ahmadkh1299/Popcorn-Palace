@@ -120,11 +120,14 @@ public class ShowtimeService {
             showtimeRepository.save(existing);
             logger.info("Showtime updated successfully for ID: {}", id);
 
+        } catch (BadRequestException | ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
-            logger.error("Error updating showtime with ID: {}", id, e);
+            logger.error("Unexpected error updating showtime with ID: {}", id, e);
             throw new RuntimeException("Failed to update showtime", e);
         }
     }
+
 
     public void deleteShowtime(Long id) {
         logger.info("Deleting showtime with ID: {}", id);
