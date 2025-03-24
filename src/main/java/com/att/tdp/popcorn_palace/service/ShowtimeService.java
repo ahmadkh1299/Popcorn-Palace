@@ -9,7 +9,8 @@ import com.att.tdp.popcorn_palace.exception.BadRequestException;
 import com.att.tdp.popcorn_palace.exception.ResourceNotFoundException;
 import com.att.tdp.popcorn_palace.repository.MovieRepository;
 import com.att.tdp.popcorn_palace.repository.ShowtimeRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,48 +19,59 @@ import java.util.stream.Collectors;
 @Service
 public class ShowtimeService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ShowtimeService.class);
+
     private final ShowtimeRepository showtimeRepository;
     private final MovieRepository movieRepository;
 
-    @Autowired
     public ShowtimeService(ShowtimeRepository showtimeRepository, MovieRepository movieRepository) {
         this.showtimeRepository = showtimeRepository;
         this.movieRepository = movieRepository;
     }
 
     public GetShowtimeDTO getShowtimeById(Long id) {
+        logger.info("Fetching showtime by ID: {}", id);
         try {
             Showtime showtime = showtimeRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Showtime not found with id: " + id));
             return convertToDTO(showtime);
-        } catch (ResourceNotFoundException e) {
-            throw e;
         } catch (Exception e) {
-            throw new BadRequestException("Failed to retrieve showtime with id: " + id);
+            logger.error("Error fetching showtime with ID: {}", id, e);
+            throw e;
         }
     }
 
     public List<GetShowtimeDTO> getAllShowtimes() {
+        logger.info("Fetching all showtimes...");
         try {
             return showtimeRepository.findAll()
                     .stream()
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            throw new BadRequestException("Failed to retrieve showtimes from the database.");
+            logger.error("Error fetching all showtimes", e);
+            throw new RuntimeException("Failed to retrieve showtimes", e);
         }
     }
 
     public void addShowtime(AddShowtimeDTO dto) {
+        logger.info("Adding new showtime for theater: {}", dto.getTheater());
+        Movie movie;
         try {
-            Movie movie = movieRepository.findById(dto.getMovieId())
+            movie = movieRepository.findById(dto.getMovieId())
                     .orElseThrow(() -> new ResourceNotFoundException("Movie not found with id: " + dto.getMovieId()));
+        } catch (Exception e) {
+            logger.error("Error retrieving movie for showtime", e);
+            throw e;
+        }
 
+        try {
             List<Showtime> overlapping = showtimeRepository.findOverlappingShowtimes(
                     dto.getTheater(), dto.getStartTime(), dto.getEndTime()
             );
 
             if (!overlapping.isEmpty()) {
+                logger.warn("Overlapping showtime found for theater: {}", dto.getTheater());
                 throw new BadRequestException("Overlapping showtime already exists for theater: " + dto.getTheater());
             }
 
@@ -71,14 +83,16 @@ public class ShowtimeService {
             showtime.setEndTime(dto.getEndTime());
 
             showtimeRepository.save(showtime);
-        } catch (ResourceNotFoundException | BadRequestException e) {
-            throw e;
+            logger.info("Showtime saved successfully");
+
         } catch (Exception e) {
-            throw new BadRequestException("Failed to add showtime. Please try again.");
+            logger.error("Error while adding showtime", e);
+            throw new RuntimeException("Failed to add showtime", e);
         }
     }
 
     public void updateShowtime(Long id, UpdateShowtimeDTO dto) {
+        logger.info("Updating showtime with ID: {}", id);
         try {
             Showtime existing = showtimeRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Showtime not found with id: " + id));
@@ -87,10 +101,13 @@ public class ShowtimeService {
                     .orElseThrow(() -> new ResourceNotFoundException("Movie not found with id: " + dto.getMovieId()));
 
             List<Showtime> overlapping = showtimeRepository.findOverlappingShowtimes(
-                    dto.getTheater(), dto.getStartTime(), dto.getEndTime()
-            ).stream().filter(s -> !s.getId().equals(id)).collect(Collectors.toList());
+                            dto.getTheater(), dto.getStartTime(), dto.getEndTime()
+                    ).stream()
+                    .filter(s -> !s.getId().equals(id))
+                    .collect(Collectors.toList());
 
             if (!overlapping.isEmpty()) {
+                logger.warn("Update overlaps with existing showtime in theater: {}", dto.getTheater());
                 throw new BadRequestException("Updated showtime overlaps with another showtime in theater: " + dto.getTheater());
             }
 
@@ -101,28 +118,31 @@ public class ShowtimeService {
             existing.setEndTime(dto.getEndTime());
 
             showtimeRepository.save(existing);
-        } catch (ResourceNotFoundException | BadRequestException e) {
-            throw e;
+            logger.info("Showtime updated successfully for ID: {}", id);
+
         } catch (Exception e) {
-            throw new BadRequestException("Failed to update showtime.");
+            logger.error("Error updating showtime with ID: {}", id, e);
+            throw new RuntimeException("Failed to update showtime", e);
         }
     }
 
     public void deleteShowtime(Long id) {
+        logger.info("Deleting showtime with ID: {}", id);
         try {
             if (!showtimeRepository.existsById(id)) {
                 throw new ResourceNotFoundException("Showtime not found with id: " + id);
             }
             showtimeRepository.deleteById(id);
-        } catch (ResourceNotFoundException e) {
-            throw e;
+            logger.info("Showtime deleted with ID: {}", id);
         } catch (Exception e) {
-            throw new BadRequestException("Failed to delete showtime.");
+            logger.error("Error deleting showtime with ID: {}", id, e);
+            throw new RuntimeException("Failed to delete showtime", e);
         }
     }
 
     private GetShowtimeDTO convertToDTO(Showtime showtime) {
         if (showtime.getMovie() == null) {
+            logger.error("Showtime is missing movie reference!");
             throw new BadRequestException("Showtime is missing associated movie.");
         }
 
