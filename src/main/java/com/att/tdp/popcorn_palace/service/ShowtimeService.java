@@ -29,6 +29,12 @@ public class ShowtimeService {
         this.movieRepository = movieRepository;
     }
 
+    /**
+     * Fetch a showtime by its ID.
+     *
+     * @param id the ID of the showtime
+     * @return the corresponding DTO
+     */
     public GetShowtimeDTO getShowtimeById(Long id) {
         logger.info("Fetching showtime by ID: {}", id);
         try {
@@ -41,6 +47,11 @@ public class ShowtimeService {
         }
     }
 
+    /**
+     * Fetch all showtimes in the system.
+     *
+     * @return list of all showtimes as DTOs
+     */
     public List<GetShowtimeDTO> getAllShowtimes() {
         logger.info("Fetching all showtimes...");
         try {
@@ -54,8 +65,15 @@ public class ShowtimeService {
         }
     }
 
+    /**
+     * Add a new showtime if it does not overlap with existing ones in the same theater.
+     *
+     * @param dto the showtime to add
+     */
     public void addShowtime(AddShowtimeDTO dto) {
         logger.info("Adding new showtime for theater: {}", dto.getTheater());
+
+        // 1. Make sure the movie exists
         Movie movie;
         try {
             movie = movieRepository.findById(dto.getMovieId())
@@ -66,6 +84,7 @@ public class ShowtimeService {
         }
 
         try {
+            // 2. Check for overlapping showtimes in the same theater
             List<Showtime> overlapping = showtimeRepository.findOverlappingShowtimes(
                     dto.getTheater(), dto.getStartTime(), dto.getEndTime()
             );
@@ -75,6 +94,7 @@ public class ShowtimeService {
                 throw new BadRequestException("Overlapping showtime already exists for theater: " + dto.getTheater());
             }
 
+            // 3. Save the new showtime
             Showtime showtime = new Showtime();
             showtime.setMovie(movie);
             showtime.setPrice(dto.getPrice());
@@ -91,19 +111,28 @@ public class ShowtimeService {
         }
     }
 
+    /**
+     * Update an existing showtime, making sure the new time does not overlap with others.
+     *
+     * @param id  the ID of the showtime to update
+     * @param dto new showtime values
+     */
     public void updateShowtime(Long id, UpdateShowtimeDTO dto) {
         logger.info("Updating showtime with ID: {}", id);
         try {
+            // 1. Ensure showtime exists
             Showtime existing = showtimeRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Showtime not found with id: " + id));
 
+            // 2. Ensure new movie exists
             Movie movie = movieRepository.findById(dto.getMovieId())
                     .orElseThrow(() -> new ResourceNotFoundException("Movie not found with id: " + dto.getMovieId()));
 
+            // 3. Find overlapping showtimes in the same theater, ignoring this one
             List<Showtime> overlapping = showtimeRepository.findOverlappingShowtimes(
                             dto.getTheater(), dto.getStartTime(), dto.getEndTime()
                     ).stream()
-                    .filter(s -> !s.getId().equals(id))
+                    .filter(s -> !s.getId().equals(id)) // exclude the current one
                     .collect(Collectors.toList());
 
             if (!overlapping.isEmpty()) {
@@ -111,6 +140,7 @@ public class ShowtimeService {
                 throw new BadRequestException("Updated showtime overlaps with another showtime in theater: " + dto.getTheater());
             }
 
+            // 4. Apply changes and save
             existing.setMovie(movie);
             existing.setPrice(dto.getPrice());
             existing.setTheater(dto.getTheater());
@@ -128,7 +158,11 @@ public class ShowtimeService {
         }
     }
 
-
+    /**
+     * Delete a showtime by its ID.
+     *
+     * @param id the ID of the showtime to delete
+     */
     public void deleteShowtime(Long id) {
         logger.info("Deleting showtime with ID: {}", id);
         try {
@@ -143,6 +177,12 @@ public class ShowtimeService {
         }
     }
 
+    /**
+     * Convert a Showtime entity to its corresponding DTO.
+     *
+     * @param showtime the entity
+     * @return the DTO
+     */
     private GetShowtimeDTO convertToDTO(Showtime showtime) {
         if (showtime.getMovie() == null) {
             logger.error("Showtime is missing movie reference!");

@@ -27,9 +27,16 @@ public class BookingService {
         this.showtimeRepository = showtimeRepository;
     }
 
+    /**
+     * Books a ticket for a specific showtime and seat.
+     *
+     * @param dto The booking request containing showtime ID, user ID, and seat number
+     * @return BookingResponseDTO with booking confirmation (UUID)
+     */
     public BookingResponseDTO bookTicket(AddBookingDTO dto) {
         logger.info("Attempting to book a ticket: {}", dto);
 
+        // 1. Fetch the corresponding showtime from the database
         Showtime showtime;
         try {
             showtime = showtimeRepository.findById(dto.getShowtimeId())
@@ -39,6 +46,7 @@ public class BookingService {
             throw e;
         }
 
+        // 2. Check if the seat is already booked for this showtime
         boolean seatAlreadyBooked;
         try {
             seatAlreadyBooked = bookingRepository.existsByShowtimeIdAndSeatNumber(dto.getShowtimeId(), dto.getSeatNumber());
@@ -47,17 +55,20 @@ public class BookingService {
             throw new RuntimeException("Error checking seat availability", e);
         }
 
+        // 3. If booked, throw a custom BadRequestException
         if (seatAlreadyBooked) {
             logger.warn("Seat already booked: seatNumber={} for showtimeId={}", dto.getSeatNumber(), dto.getShowtimeId());
             throw new BadRequestException("Seat " + dto.getSeatNumber() + " is already booked for this showtime.");
         }
 
+        // 4. Create a new booking entry
         Booking booking = new Booking();
-        booking.setBookingId(UUID.randomUUID());
+        booking.setBookingId(UUID.randomUUID()); // Assign a unique booking ID
         booking.setUserId(dto.getUserId());
         booking.setSeatNumber(dto.getSeatNumber());
-        booking.setShowtime(showtime);
+        booking.setShowtime(showtime); // Link to the showtime entity
 
+        // 5. Save the booking in the database and return confirmation
         try {
             Booking savedBooking = bookingRepository.save(booking);
             logger.info("Booking saved successfully: {}", savedBooking.getBookingId());

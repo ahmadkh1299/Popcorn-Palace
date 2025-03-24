@@ -24,6 +24,11 @@ public class MovieService {
         this.movieRepository = movieRepository;
     }
 
+    /**
+     * Retrieve all movies from the database and convert them to DTOs.
+     *
+     * @return a list of GetMovieDTO objects
+     */
     public List<GetMovieDTO> getAllMovies() {
         logger.info("Fetching all movies...");
         try {
@@ -37,6 +42,12 @@ public class MovieService {
         }
     }
 
+    /**
+     * Retrieve a single movie by its title.
+     *
+     * @param title the title of the movie to retrieve
+     * @return the movie as a GetMovieDTO
+     */
     public GetMovieDTO getMovieByTitle(String title) {
         logger.info("Fetching movie by title: {}", title);
         try {
@@ -49,6 +60,12 @@ public class MovieService {
         }
     }
 
+    /**
+     * Add a new movie to the database.
+     *
+     * @param dto the data needed to create a movie
+     * @return the ID of the newly created movie
+     */
     public Long addMovie(AddMovieDTO dto) {
         logger.info("Adding movie: {}", dto.getTitle());
         try {
@@ -58,15 +75,23 @@ public class MovieService {
             movie.setDuration(dto.getDuration());
             movie.setRating(dto.getRating());
             movie.setReleaseYear(dto.getReleaseYear());
+
             movieRepository.save(movie);
+
             logger.info("Movie saved successfully: {} with ID {}", movie.getTitle(), movie.getId());
-            return movie.getId();  // ✅ Return the generated ID
+            return movie.getId();  // Return the auto-generated ID after saving
         } catch (Exception e) {
             logger.error("Error adding movie: {}", dto.getTitle(), e);
             throw new RuntimeException("Failed to add movie", e);
         }
     }
 
+    /**
+     * Update an existing movie's details using its title.
+     *
+     * @param title the title of the movie to update
+     * @param dto the new data to apply
+     */
     public void updateMovie(String title, UpdateMovieDTO dto) {
         logger.info("Updating movie with title: {}", title);
         try {
@@ -80,6 +105,7 @@ public class MovieService {
             existingMovie.setReleaseYear(dto.getReleaseYear());
 
             movieRepository.save(existingMovie);
+
             logger.info("Movie updated: {}", existingMovie.getTitle());
         } catch (Exception e) {
             logger.error("Error updating movie with title: {}", title, e);
@@ -87,6 +113,11 @@ public class MovieService {
         }
     }
 
+    /**
+     * Delete a movie from the database using its title.
+     *
+     * @param title the title of the movie to delete
+     */
     public void deleteMovie(String title) {
         logger.info("Deleting movie with title: {}", title);
         try {
@@ -100,6 +131,12 @@ public class MovieService {
         }
     }
 
+    /**
+     * Helper method to convert a Movie entity into a GetMovieDTO.
+     *
+     * @param movie the Movie entity
+     * @return the corresponding DTO
+     */
     private GetMovieDTO convertToGetMovieDTO(Movie movie) {
         return new GetMovieDTO(
                 movie.getId(),
