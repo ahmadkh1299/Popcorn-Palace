@@ -87,7 +87,7 @@ public class ShowtimeService {
 
         } catch (Exception e) {
             logger.error("Error while adding showtime", e);
-            throw new RuntimeException("Failed to add showtime", e);
+            throw e;
         }
     }
 

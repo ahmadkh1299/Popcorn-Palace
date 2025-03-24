@@ -60,6 +60,11 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(new Exception(customMessage), HttpStatus.BAD_REQUEST, request);
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<Object> handleBadRequestException(BadRequestException ex, WebRequest request) {
+        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Object> handleGenericRuntime(RuntimeException e, WebRequest request) {
         return buildErrorResponse(e, HttpStatus.INTERNAL_SERVER_ERROR, request);
